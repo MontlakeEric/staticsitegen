@@ -20,6 +20,8 @@ class TextNode:
         return self.text == other.text and self.text_type == other.text_type and self.url == other.url
 
     def __repr__(self):
+        if not isinstance(self.text_type, TextType):
+            raise ValueError(f"Unsupported text type: {self.text_type}")
         return f"TextNode({self.text!r}, {self.text_type.value}, {self.url!r})"
 
     def render(self) -> str:
