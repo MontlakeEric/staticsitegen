@@ -1,4 +1,5 @@
 from enum import Enum
+from leafnode import LeafNode
 
 class TextType(Enum):
     PLAIN = "plain"
@@ -24,18 +25,23 @@ class TextNode:
             raise ValueError(f"Unsupported text type: {self.text_type}")
         return f"TextNode({self.text!r}, {self.text_type.value}, {self.url!r})"
 
-    def render(self) -> str:
-        if self.text_type == TextType.PLAIN:
-            return self.text
-        elif self.text_type == TextType.BOLD:
-            return f"<strong>{self.text}</strong>"
-        elif self.text_type == TextType.ITALIC:
-            return f"<em>{self.text}</em>"
-        elif self.text_type == TextType.CODE:
-            return f"<code>{self.text}</code>"
-        elif self.text_type == TextType.LINK:
-            return f'<a href="{self.url}">{self.text}</a>'
-        elif self.text_type == TextType.IMAGE:
-            return f'<img src="{self.url}" alt="{self.text}" />'
-        else:
-            raise ValueError(f"Unsupported text type: {self.text_type}")
+def text_node_to_html_node(text_node: TextNode) -> LeafNode:
+    match text_node.text_type:
+        case TextType.PLAIN:
+            return LeafNode(None, text_node.text)
+        case TextType.BOLD:
+            return LeafNode("b", text_node.text)
+        case TextType.ITALIC:
+            return LeafNode("i", text_node.text)
+        case TextType.CODE:
+            return LeafNode("code", text_node.text)
+        case TextType.LINK:
+            if not text_node.url:
+                raise ValueError("URL must be provided for link text type")
+            return LeafNode("a", text_node.text, {"href": text_node.url})
+        case TextType.IMAGE:
+            if not text_node.url:
+                raise ValueError("URL must be provided for image text type")
+            return LeafNode("img", "", {"src": text_node.url, "alt": text_node.text})
+        case _:
+            raise ValueError(f"Unsupported text type: {text_node.text_type}")
