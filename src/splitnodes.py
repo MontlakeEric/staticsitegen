@@ -1,4 +1,5 @@
 from textnode import TextNode, TextType
+from extract_links import extract_markdown_images, extract_markdown_links
 
 def split_nodes_delimiter(old_nodes: list[TextNode], delimiter: str, text_type: TextType) -> list[TextNode]:
     new_nodes = []
@@ -17,6 +18,44 @@ def split_nodes_delimiter(old_nodes: list[TextNode], delimiter: str, text_type: 
                     new_nodes.append(TextNode(part, text_type=TextType.PLAIN, url=node.url))
                 else:
                     new_nodes.append(TextNode(part, text_type=text_type, url=node.url))
+        else:
+            new_nodes.append(node)
+    return new_nodes
+
+def split_nodes_image(old_nodes: list[TextNode]) -> list[TextNode]:
+    new_nodes = []
+    for node in old_nodes:
+        text = node.text
+        if node.text_type == TextType.PLAIN and (images := extract_markdown_images(text)):
+            last_index = 0
+            for alt_text, url in images:
+                full_image = f"![{alt_text}]({url})"
+                start_index = text.find(full_image, last_index)
+                if start_index > last_index:
+                    new_nodes.append(TextNode(text[last_index:start_index], text_type=TextType.PLAIN, url=node.url))
+                new_nodes.append(TextNode(alt_text, text_type=TextType.IMAGE, url=url))
+                last_index = start_index + len(full_image)
+            if last_index < len(text):
+                new_nodes.append(TextNode(text[last_index:], text_type=TextType.PLAIN, url=node.url))
+        else:
+            new_nodes.append(node)
+    return new_nodes
+
+def split_nodes_link(old_nodes: list[TextNode]) -> list[TextNode]:
+    new_nodes = []
+    for node in old_nodes:
+        text = node.text
+        if node.text_type == TextType.PLAIN and (links := extract_markdown_links(text)):
+            last_index = 0
+            for link_text, url in links:
+                full_link = f"[{link_text}]({url})"
+                start_index = text.find(full_link, last_index)
+                if start_index > last_index:
+                    new_nodes.append(TextNode(text[last_index:start_index], text_type=TextType.PLAIN, url=node.url))
+                new_nodes.append(TextNode(link_text, text_type=TextType.LINK, url=url))
+                last_index = start_index + len(full_link)
+            if last_index < len(text):
+                new_nodes.append(TextNode(text[last_index:], text_type=TextType.PLAIN, url=node.url))
         else:
             new_nodes.append(node)
     return new_nodes
