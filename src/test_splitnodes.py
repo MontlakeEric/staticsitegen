@@ -1,6 +1,6 @@
 import unittest
 from textnode import TextNode, TextType
-from splitnodes import split_nodes_delimiter, split_nodes_image, split_nodes_link
+from splitnodes import split_nodes_delimiter, split_nodes_image, split_nodes_link, text_to_textnodes
 
 
 class TestSplitNodes(unittest.TestCase):
@@ -490,6 +490,71 @@ class TestSplitNodes(unittest.TestCase):
             ],
             new_nodes,
         )
+
+    def test_text_to_textnodes(self):
+        text = "This is a **bold** and _italic_ text with a [link](https://example.com) and an ![image](https://i.imgur.com/zjjcJKZ.png)"
+        nodes = text_to_textnodes(text)
+        expected_nodes = [
+            TextNode("This is a ", TextType.PLAIN),
+            TextNode("bold", TextType.BOLD),
+            TextNode(" and ", TextType.PLAIN),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" text with a ", TextType.PLAIN),
+            TextNode("link", TextType.LINK, "https://example.com"),
+            TextNode(" and an ", TextType.PLAIN),
+            TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+        ]
+        self.assertEqual(nodes, expected_nodes)
+
+    def test_text_to_textnodes_with_no_formatting(self):
+        text = "This is a plain text with no formatting"
+        nodes = text_to_textnodes(text)
+        expected_nodes = [
+            TextNode("This is a plain text with no formatting", TextType.PLAIN),
+        ]
+        self.assertEqual(nodes, expected_nodes)
+
+    def test_text_to_textnodes_with_only_formatting(self):
+        text = "**bold** _italic_ [link](https://example.com) ![image](https://i.imgur.com/zjjcJKZ.png)"
+        nodes = text_to_textnodes(text)
+        expected_nodes = [
+            TextNode("bold", TextType.BOLD),
+            TextNode(" ", TextType.PLAIN),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" ", TextType.PLAIN),
+            TextNode("link", TextType.LINK, "https://example.com"),
+            TextNode(" ", TextType.PLAIN),
+            TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+        ]
+        self.assertEqual(nodes, expected_nodes)
+
+    def test_text_to_textnodes_with_unmatched_delimiter(self):
+        text = "This is a **bold and _italic_ text with a [link](https://example.com) and an ![image](https://i.imgur.com/zjjcJKZ.png)"
+        with self.assertRaises(ValueError):
+            text_to_textnodes(text)
+
+    def test_text_to_textnodes_with_multiple_of_each(self):
+        text = "This is a **bold** and _italic_ text with a [link](https://example.com) and an ![image](https://i.imgur.com/zjjcJKZ.png) and another **bold** and _italic_ text with a [link](https://example.com) and an ![image](https://i.imgur.com/zjjcJKZ.png)"
+        nodes = text_to_textnodes(text)
+        expected_nodes = [
+            TextNode("This is a ", TextType.PLAIN),
+            TextNode("bold", TextType.BOLD),
+            TextNode(" and ", TextType.PLAIN),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" text with a ", TextType.PLAIN),
+            TextNode("link", TextType.LINK, "https://example.com"),
+            TextNode(" and an ", TextType.PLAIN),
+            TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+            TextNode(" and another ", TextType.PLAIN),
+            TextNode("bold", TextType.BOLD),
+            TextNode(" and ", TextType.PLAIN),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" text with a ", TextType.PLAIN),
+            TextNode("link", TextType.LINK, "https://example.com"),
+            TextNode(" and an ", TextType.PLAIN),
+            TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+        ]
+        self.assertEqual(nodes, expected_nodes)
 
 if __name__ == "__main__":
     unittest.main()
