@@ -11,8 +11,26 @@ class TestBlockTypes(unittest.TestCase):
         block = "```\ncode\n```"
         self.assertEqual(block_to_block_type(block), BlockType.CODE)
 
+    def test_block_to_block_type_heading_multiline(self):
+        # spec only says a heading *starts* with #s, so following lines stay in the heading
+        block = "# Heading\nsecond line"
+        self.assertEqual(block_to_block_type(block), BlockType.HEADING)
+
+    def test_block_to_block_type_code_multiline(self):
+        block = "```\nline one\nline two\n```"
+        self.assertEqual(block_to_block_type(block), BlockType.CODE)
+
+    def test_block_to_block_type_code_empty(self):
+        block = "```\n```"
+        self.assertEqual(block_to_block_type(block), BlockType.CODE)
+
     def test_block_to_block_type_quote(self):
         block = "> Quote"
+        self.assertEqual(block_to_block_type(block), BlockType.QUOTE)
+
+    def test_block_to_block_type_quote_multiline_optional_space(self):
+        # a space after > is allowed but not required
+        block = "> with space\n>without space"
         self.assertEqual(block_to_block_type(block), BlockType.QUOTE)
 
     def test_block_to_block_type_unordered_list(self):
@@ -21,6 +39,10 @@ class TestBlockTypes(unittest.TestCase):
 
     def test_block_to_block_type_ordered_list(self):
         block = "1. Item 1\n2. Item 2"
+        self.assertEqual(block_to_block_type(block), BlockType.ORDERED_LIST)
+
+    def test_block_to_block_type_ordered_list_double_digits(self):
+        block = "\n".join(f"{i}. Item {i}" for i in range(1, 12))
         self.assertEqual(block_to_block_type(block), BlockType.ORDERED_LIST)
 
     def test_block_to_block_type_paragraph(self):
@@ -43,6 +65,11 @@ class TestBlockTypes(unittest.TestCase):
 
     def test_block_to_block_type_with_3_backticks_but_no_newline(self):
         block = "```code```"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+
+    # Code block with a language tag: spec requires a newline right after the backticks
+    def test_block_to_block_type_with_code_block_language_tag(self):
+        block = "```python\nx = 1\n```"
         self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
 
     # Code block but not ending with 3 backticks

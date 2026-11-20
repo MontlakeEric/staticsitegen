@@ -13,18 +13,14 @@ def block_to_block_type(block):
     # per spec, all leading and trailing whitespace were already stripped (in markdown_to_blocks)
 
     # Headings start with 1-6 # characters, followed by a space and then the heading text.
-    if re.search(r"^#{1,6} ", block):
+    if re.match(r"#{1,6} ", block):
         return BlockType.HEADING
 
     # Multiline Code blocks must start with 3 backticks and a newline, then end with 3 backticks.
-    if re.search(r"^```\n.*\n```$", block):
+    if block.startswith("```\n") and block.endswith("```"):
         return BlockType.CODE
 
     lines = block.split("\n")
-
-    # whitespace has been stripped, but just making absolutely sure that it wasn't all whitespace or even an empty string
-    if len(lines) == 0:
-        return BlockType.PARAGRAPH
 
     # Every line in a quote block must start with a "greater-than" character: > followed by the quote text. A space after > is allowed but not required.
     if all(line.startswith(">") for line in lines):
